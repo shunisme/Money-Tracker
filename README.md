@@ -1,5 +1,19 @@
 # MoneyTrack
 
+<p align="left">
+  <a href="https://money-tracker-2cyr.vercel.app" target="_blank">
+    <img src="https://img.shields.io/badge/Live_Demo-money--tracker--2cyr.vercel.app-059669?style=flat-square&logo=vercel&logoColor=white" alt="Live Demo" />
+  </a>
+  <a href="https://github.com/shunisme/Money-Tracker" target="_blank">
+    <img src="https://img.shields.io/badge/GitHub-Repository-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub Repository" />
+  </a>
+  <img src="https://img.shields.io/badge/React-19.0-61dafb?style=flat-square&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5.0-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-38bdf8?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Vite-8.0-646cff?style=flat-square&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e?style=flat-square&logo=supabase&logoColor=white" alt="Supabase" />
+</p>
+
 MoneyTrack is a personal finance and budget tracking application designed for clear, everyday financial management. It provides monthly cash flow monitoring, expense categorization, recurring subscription tracking, and budget thresholds. The platform operates on a local-first model with optional cloud synchronization.
 
 Live Application: [https://money-tracker-2cyr.vercel.app](https://money-tracker-2cyr.vercel.app)
