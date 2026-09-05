@@ -22,24 +22,24 @@ export const MonthSelector: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-1.5 shadow-sm">
+    <div className="flex items-center gap-1 bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-1 shadow-2xs">
       {/* Previous Month */}
       <button
         onClick={prevMonth}
         title="Previous Month"
         aria-label="Previous Month"
-        className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+        className="p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all"
       >
-        <ChevronLeft className="w-5 h-5" />
+        <ChevronLeft className="w-4 h-4" />
       </button>
 
       {/* Month Label with Month Picker trigger */}
       <div className="relative">
         <button
           onClick={openPicker}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all"
         >
-          <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <Calendar className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <span>{formatMonthYear(activeMonth)}</span>
         </button>
 
@@ -58,9 +58,9 @@ export const MonthSelector: React.FC = () => {
         onClick={nextMonth}
         title="Next Month"
         aria-label="Next Month"
-        className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+        className="p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all"
       >
-        <ChevronRight className="w-5 h-5" />
+        <ChevronRight className="w-4 h-4" />
       </button>
 
       {/* Jump back to Current Month if looking at history */}
@@ -68,9 +68,9 @@ export const MonthSelector: React.FC = () => {
         <button
           onClick={() => setActiveMonth(currentMonth)}
           title="Jump to Current Month"
-          className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-xl transition-colors ml-1"
+          className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 bg-emerald-500/10 dark:text-emerald-300 hover:bg-emerald-500/20 rounded-xl transition-colors ml-0.5"
         >
-          <RotateCcw className="w-3.5 h-3.5" />
+          <RotateCcw className="w-3 h-3" />
           <span className="hidden sm:inline">Current</span>
         </button>
       )}
