@@ -20,13 +20,13 @@
 </p>
 
 <p align="center">
-  <a href="https://money-tracker-shunisme.vercel.app" target="_blank">
+  <a href="https://money-tracker-2cyr.vercel.app" target="_blank">
     <img src="https://img.shields.io/badge/🚀_Live_Demo-Try_MoneyTrack-059669?style=for-the-badge" alt="Live Demo" />
   </a>
 </p>
 
 <p align="center">
-  🌐 <strong>Live Application URL</strong>: <a href="https://money-tracker-shunisme.vercel.app" target="_blank">https://money-tracker-shunisme.vercel.app</a>
+  🌐 <strong>Live Application URL</strong>: <a href="https://money-tracker-2cyr.vercel.app" target="_blank">https://money-tracker-2cyr.vercel.app</a>
 </p>
 
 ---
