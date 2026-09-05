@@ -2,12 +2,23 @@ import type { Transaction, Subscription } from '../types/finance';
 import { getCurrentMonth, shiftMonth } from './formatters';
 
 const STORAGE_KEYS = {
-  TRANSACTIONS: 'moneytrack_transactions_v1',
-  BUDGETS: 'moneytrack_budgets_v1',
-  SUBSCRIPTIONS: 'moneytrack_subscriptions_v1',
+  TRANSACTIONS: 'moneytrack_transactions_v2',
+  BUDGETS: 'moneytrack_budgets_v2',
+  SUBSCRIPTIONS: 'moneytrack_subscriptions_v2',
   THEME: 'moneytrack_theme_v1',
-  INITIALIZED: 'moneytrack_has_initialized_v1',
+  INITIALIZED: 'moneytrack_has_initialized_v2',
 };
+
+// Clean up legacy v1 seeded demo data if present
+try {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    localStorage.removeItem('moneytrack_transactions_v1');
+    localStorage.removeItem('moneytrack_subscriptions_v1');
+    localStorage.removeItem('moneytrack_has_initialized_v1');
+  }
+} catch {
+  // ignore
+}
 
 /**
  * Generate realistic Malaysian sample transactions for current and previous months
@@ -122,20 +133,11 @@ export const getDefaultBudgets = (): Record<string, number> => {
 };
 
 /**
- * Load transactions from localStorage or initialize with sample data
+ * Load transactions from localStorage (starts clean with 0 data)
  */
 export const loadStoredTransactions = (): Transaction[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-    const hasInitialized = localStorage.getItem(STORAGE_KEYS.INITIALIZED);
-
-    if (!raw && !hasInitialized) {
-      const samples = generateSampleTransactions();
-      saveStoredTransactions(samples);
-      localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
-      return samples;
-    }
-
     return raw ? JSON.parse(raw) : [];
   } catch (err) {
     console.error('Failed to load transactions from localStorage:', err);
@@ -237,21 +239,15 @@ export const generateSampleSubscriptions = (): Subscription[] => [
 ];
 
 /**
- * Load subscriptions from localStorage
+ * Load subscriptions from localStorage (starts clean with 0 data)
  */
 export const loadStoredSubscriptions = (): Subscription[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SUBSCRIPTIONS);
-    if (!raw) {
-      const sample = generateSampleSubscriptions();
-      saveStoredSubscriptions(sample);
-      return sample;
-    }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return raw ? JSON.parse(raw) : [];
   } catch (err) {
     console.error('Failed to load subscriptions from localStorage:', err);
-    return generateSampleSubscriptions();
+    return [];
   }
 };
 
