@@ -53,7 +53,7 @@ Users can export their complete transaction history as a comma-separated values 
 - Styling: Tailwind CSS
 - Iconography: Lucide Icons
 - Database and Authentication: Supabase (PostgreSQL, Realtime replication, Row Level Security)
-- Deployment Target: Vercel
+- Deployment : Vercel
 
 ---
 
