@@ -9,7 +9,8 @@ import type {
 } from '../../types/finance';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORY_CONFIGS } from '../../constants/categories';
 import { CategoryIcon } from '../common/CategoryIcon';
-import { getTodayDate } from '../../utils/formatters';
+import { SuccessCheckmark } from '../common/SuccessCheckmark';
+import { getTodayDate, formatCurrency } from '../../utils/formatters';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -34,6 +35,21 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [description, setDescription] = useState<string>('');
   const [date, setDate] = useState<string>(getTodayDate());
   const [errors, setErrors] = useState<{ amount?: string; description?: string; date?: string }>({});
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [submittedData, setSubmittedData] = useState<{
+    amount: number;
+    type: TransactionType;
+    category: TransactionCategory;
+    description: string;
+    isEditing: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsSuccess(false);
+      setSubmittedData(null);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (editingTransaction) {
@@ -97,15 +113,31 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     e.preventDefault();
     if (!validate()) return;
 
+    const numAmount = parseFloat(parseFloat(amount).toFixed(2));
+    const trimmedDesc = description.trim();
+
     onSubmit({
-      amount: parseFloat(parseFloat(amount).toFixed(2)),
+      amount: numAmount,
       type,
       category,
-      description: description.trim(),
+      description: trimmedDesc,
       date,
     });
 
-    onClose();
+    setSubmittedData({
+      amount: numAmount,
+      type,
+      category,
+      description: trimmedDesc,
+      isEditing,
+    });
+    setIsSuccess(true);
+
+    setTimeout(() => {
+      setIsSuccess(false);
+      setSubmittedData(null);
+      onClose();
+    }, 1000);
   };
 
   if (!isOpen) return null;
@@ -114,11 +146,45 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div
-        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[92vh] flex flex-col"
-        role="dialog"
-        aria-modal="true"
-      >
+      {isSuccess && submittedData ? (
+        <div
+          className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden flex flex-col items-center justify-center p-8 sm:p-10 text-center animate-in zoom-in-95 duration-200"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="my-2">
+            <SuccessCheckmark size={72} strokeWidth={3.5} />
+          </div>
+
+          <div className="mt-3">
+            <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+              {submittedData.isEditing ? 'Changes Saved!' : 'Transaction Added!'}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[240px] truncate mx-auto font-medium">
+              {submittedData.description}
+            </p>
+          </div>
+
+          <div className="mt-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 text-xs font-bold shadow-xs">
+            <span
+              className={
+                submittedData.type === 'income'
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-rose-600 dark:text-rose-400'
+              }
+            >
+              {submittedData.type === 'income' ? '+' : '-'}{formatCurrency(submittedData.amount)}
+            </span>
+            <span className="text-slate-300 dark:text-slate-600">•</span>
+            <span className="text-slate-700 dark:text-slate-300">{submittedData.category}</span>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[92vh] flex flex-col"
+          role="dialog"
+          aria-modal="true"
+        >
         {/* Modal Header */}
         <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div>
@@ -317,6 +383,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
-  );
+    )}
+  </div>
+);
 };

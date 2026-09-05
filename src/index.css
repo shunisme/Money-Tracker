@@ -34,3 +34,62 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.8);
 }
+
+/* Success Tick Checkmark Animations */
+@keyframes checkmark-circle {
+  0% {
+    stroke-dashoffset: 150;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes checkmark-check {
+  0% {
+    stroke-dashoffset: 40;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes checkmark-pop {
+  0% {
+    transform: scale(0.75);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-checkmark-circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(-90deg);
+  stroke-dasharray: 150;
+  stroke-dashoffset: 150;
+  animation: checkmark-circle 0.42s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-checkmark-check {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: checkmark-check 0.38s cubic-bezier(0.4, 0, 0.2, 1) 0.25s forwards;
+}
+
+.animate-checkmark-pop {
+  animation: checkmark-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+

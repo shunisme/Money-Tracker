@@ -23,6 +23,7 @@ const DEFAULT_PRESETS: Preset[] = [
 export const QuickAddPresets: React.FC = () => {
   const { addTransaction, deleteTransaction } = useFinance();
   const [lastAddedTx, setLastAddedTx] = useState<{ id: string; name: string; amount: number } | null>(null);
+  const [justAddedId, setJustAddedId] = useState<string | null>(null);
 
   const handleQuickAdd = (preset: Preset) => {
     const today = getTodayDate();
@@ -35,6 +36,12 @@ export const QuickAddPresets: React.FC = () => {
     });
 
     setLastAddedTx({ id: newTx.id, name: preset.name, amount: preset.amount });
+    setJustAddedId(preset.id);
+
+    // Reset button tick feedback after 1.2 seconds
+    setTimeout(() => {
+      setJustAddedId((prev) => (prev === preset.id ? null : prev));
+    }, 1200);
 
     // Auto-dismiss undo after 6 seconds
     setTimeout(() => {
@@ -84,18 +91,32 @@ export const QuickAddPresets: React.FC = () => {
 
       {/* Preset Chips */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {DEFAULT_PRESETS.map((preset) => (
-          <button
-            key={preset.id}
-            onClick={() => handleQuickAdd(preset)}
-            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100/90 hover:bg-emerald-500/10 dark:bg-slate-800/80 dark:hover:bg-emerald-500/20 text-slate-700 hover:text-emerald-700 dark:text-slate-300 dark:hover:text-emerald-300 border border-slate-200/60 dark:border-slate-700/60 transition-all active:scale-95"
-          >
-            <span>{preset.name}</span>
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-              +{formatCurrency(preset.amount)}
-            </span>
-          </button>
-        ))}
+        {DEFAULT_PRESETS.map((preset) => {
+          const isJustAdded = justAddedId === preset.id;
+          return (
+            <button
+              key={preset.id}
+              onClick={() => handleQuickAdd(preset)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all active:scale-95 ${
+                isJustAdded
+                  ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm shadow-emerald-500/30 scale-105'
+                  : 'bg-slate-100/90 hover:bg-emerald-500/10 dark:bg-slate-800/80 dark:hover:bg-emerald-500/20 text-slate-700 hover:text-emerald-700 dark:text-slate-300 dark:hover:text-emerald-300 border-slate-200/60 dark:border-slate-700/60'
+              }`}
+            >
+              {isJustAdded && (
+                <Check className="w-3.5 h-3.5 animate-in zoom-in-50 duration-200 text-white" />
+              )}
+              <span>{isJustAdded ? 'Added!' : preset.name}</span>
+              <span
+                className={`text-[11px] font-bold ${
+                  isJustAdded ? 'text-emerald-100' : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                +{formatCurrency(preset.amount)}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
