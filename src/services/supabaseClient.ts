@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 
 const CONFIG_KEY = 'moneytrack_supabase_config_v1';
 
@@ -145,3 +146,41 @@ export const testCloudConnection = async (
     return { success: false, message: `Network/Connection error: ${err.message}` };
   }
 };
+
+/**
+ * Sign up a new user with Email and Password
+ */
+export const signUpWithEmail = async (email: string, password: string) => {
+  const client = getSupabaseClient();
+  if (!client) throw new Error('Supabase is not configured yet.');
+  return await client.auth.signUp({ email, password });
+};
+
+/**
+ * Sign in existing user with Email and Password
+ */
+export const signInWithEmail = async (email: string, password: string) => {
+  const client = getSupabaseClient();
+  if (!client) throw new Error('Supabase is not configured yet.');
+  return await client.auth.signInWithPassword({ email, password });
+};
+
+/**
+ * Sign out current user
+ */
+export const signOutUser = async () => {
+  const client = getSupabaseClient();
+  if (!client) return;
+  return await client.auth.signOut();
+};
+
+/**
+ * Get current session user
+ */
+export const getAuthUser = async (): Promise<User | null> => {
+  const client = getSupabaseClient();
+  if (!client) return null;
+  const { data } = await client.auth.getUser();
+  return data?.user || null;
+};
+

@@ -6,15 +6,19 @@ import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { MobileNav } from './components/layout/MobileNav';
 import { MetricCards } from './components/dashboard/MetricCards';
+import { QuickAddPresets } from './components/dashboard/QuickAddPresets';
 import { BudgetProgress } from './components/dashboard/BudgetProgress';
 import { CategoryBreakdown } from './components/dashboard/CategoryBreakdown';
 import { MonthlyComparison } from './components/dashboard/MonthlyComparison';
 import { RecentActivity } from './components/dashboard/RecentActivity';
 import { TransactionList } from './components/transactions/TransactionList';
 import { TransactionModal } from './components/transactions/TransactionModal';
+import { SubscriptionList } from './components/subscriptions/SubscriptionList';
 import { BudgetModal } from './components/budget/BudgetModal';
 import { AnalyticsView } from './components/analytics/AnalyticsView';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { AuthModal } from './components/auth/AuthModal';
+import { InstallPwaModal } from './components/common/InstallPwaModal';
 import { ConfirmModal } from './components/common/ConfirmModal';
 
 const MainContent: React.FC = () => {
@@ -26,6 +30,8 @@ const MainContent: React.FC = () => {
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
 
   const handleOpenAdd = () => {
@@ -70,6 +76,8 @@ const MainContent: React.FC = () => {
         <Navbar
           onOpenAddModal={handleOpenAdd}
           onOpenSettingsModal={() => setIsSettingsModalOpen(true)}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onOpenPwaModal={() => setIsPwaModalOpen(true)}
           onToggleSidebar={() => setIsSidebarOpenMobile(true)}
         />
 
@@ -78,8 +86,11 @@ const MainContent: React.FC = () => {
           {/* Dashboard Tab */}
           {currentTab === 'dashboard' && (
             <div className="space-y-6 sm:space-y-8">
-              {/* Primary 4 Metric Cards */}
+              {/* Primary 4 Metric Cards & Daily Safe Spend */}
               <MetricCards />
+
+              {/* 1-Tap Quick Logging Presets */}
+              <QuickAddPresets />
 
               {/* Middle Section: Budget Meter + Spending Donut Breakdown */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -108,6 +119,9 @@ const MainContent: React.FC = () => {
               onDeleteTransaction={setDeletingTransaction}
             />
           )}
+
+          {/* Subscriptions & Recurring Bills Tab */}
+          {currentTab === 'subscriptions' && <SubscriptionList />}
 
           {/* Analytics & 6-Month Trends Tab */}
           {currentTab === 'analytics' && <AnalyticsView />}
@@ -142,6 +156,16 @@ const MainContent: React.FC = () => {
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      <InstallPwaModal
+        isOpen={isPwaModalOpen}
+        onClose={() => setIsPwaModalOpen(false)}
       />
 
       <ConfirmModal

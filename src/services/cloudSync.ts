@@ -1,4 +1,4 @@
-import type { Transaction } from '../types/finance';
+import type { Transaction, Subscription } from '../types/finance';
 import { getSupabaseClient } from './supabaseClient';
 
 /**
@@ -220,11 +220,98 @@ export const pushLocalDataToCloud = async (
 };
 
 /**
+ * Fetch all subscriptions from the cloud database
+ */
+export const fetchCloudSubscriptions = async (): Promise<Subscription[] | null> => {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  try {
+    const { data, error } = await client
+      .from('subscriptions')
+      .select('*')
+      .order('billing_day', { ascending: true });
+
+    if (error) {
+      console.error('Failed to fetch cloud subscriptions:', error);
+      return null;
+    }
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      amount: parseFloat(row.amount),
+      billingCycle: row.billing_cycle || 'monthly',
+      billingDay: parseInt(row.billing_day, 10) || 1,
+      category: row.category,
+      autoRenew: row.auto_renew !== false,
+      notes: row.notes || undefined,
+      createdAt: row.created_at,
+    }));
+  } catch (err) {
+    console.error('Error fetching cloud subscriptions:', err);
+    return null;
+  }
+};
+
+/**
+ * Upsert a subscription in the cloud
+ */
+export const pushSubscriptionToCloud = async (sub: Subscription): Promise<boolean> => {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  try {
+    const { error } = await client.from('subscriptions').upsert({
+      id: sub.id,
+      name: sub.name,
+      amount: sub.amount,
+      billing_cycle: sub.billingCycle,
+      billing_day: sub.billingDay,
+      category: sub.category,
+      auto_renew: sub.autoRenew,
+      notes: sub.notes,
+      created_at: sub.createdAt || new Date().toISOString(),
+    });
+
+    if (error) {
+      console.error('Failed to push subscription to cloud:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error pushing subscription to cloud:', err);
+    return false;
+  }
+};
+
+/**
+ * Delete a subscription from the cloud
+ */
+export const deleteCloudSubscription = async (id: string): Promise<boolean> => {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  try {
+    const { error } = await client.from('subscriptions').delete().eq('id', id);
+    if (error) {
+      console.error('Failed to delete cloud subscription:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error deleting cloud subscription:', err);
+    return false;
+  }
+};
+
+/**
  * Subscribe to realtime changes on Supabase
  */
 export const subscribeToCloudRealtime = (
   onTransactionsChange: () => void,
-  onBudgetsChange: () => void
+  onBudgetsChange: () => void,
+  onSubscriptionsChange?: () => void
 ): (() => void) => {
   const client = getSupabaseClient();
   if (!client) return () => {};
@@ -245,9 +332,17 @@ export const subscribeToCloudRealtime = (
         onBudgetsChange();
       }
     )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'subscriptions' },
+      () => {
+        onSubscriptionsChange?.();
+      }
+    )
     .subscribe();
 
   return () => {
     client.removeChannel(channel);
   };
 };
+

@@ -1,9 +1,10 @@
-import type { Transaction } from '../types/finance';
+import type { Transaction, Subscription } from '../types/finance';
 import { getCurrentMonth, shiftMonth } from './formatters';
 
 const STORAGE_KEYS = {
   TRANSACTIONS: 'moneytrack_transactions_v1',
   BUDGETS: 'moneytrack_budgets_v1',
+  SUBSCRIPTIONS: 'moneytrack_subscriptions_v1',
   THEME: 'moneytrack_theme_v1',
   INITIALIZED: 'moneytrack_has_initialized_v1',
 };
@@ -183,12 +184,96 @@ export const saveStoredBudgets = (budgets: Record<string, number>): void => {
 };
 
 /**
+ * Generate realistic Malaysian sample recurring subscriptions
+ */
+export const generateSampleSubscriptions = (): Subscription[] => [
+  {
+    id: 'sub-1',
+    name: 'Netflix Premium (4K HDR)',
+    amount: 54.90,
+    billingCycle: 'monthly',
+    billingDay: 15,
+    category: 'Entertainment',
+    autoRenew: true,
+    notes: 'Family 4-screen plan',
+  },
+  {
+    id: 'sub-2',
+    name: 'Spotify Premium Family',
+    amount: 24.90,
+    billingCycle: 'monthly',
+    billingDay: 28,
+    category: 'Entertainment',
+    autoRenew: true,
+  },
+  {
+    id: 'sub-3',
+    name: 'Maxis Home Fibre 300Mbps',
+    amount: 139.00,
+    billingCycle: 'monthly',
+    billingDay: 2,
+    category: 'Bills',
+    autoRenew: true,
+    notes: 'Auto-debit from card',
+  },
+  {
+    id: 'sub-4',
+    name: 'Celebrity Fitness All-Club Gym',
+    amount: 165.00,
+    billingCycle: 'monthly',
+    billingDay: 5,
+    category: 'Health',
+    autoRenew: true,
+  },
+  {
+    id: 'sub-5',
+    name: 'iCloud+ 200GB Storage',
+    amount: 11.90,
+    billingCycle: 'monthly',
+    billingDay: 19,
+    category: 'Bills',
+    autoRenew: true,
+  },
+];
+
+/**
+ * Load subscriptions from localStorage
+ */
+export const loadStoredSubscriptions = (): Subscription[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.SUBSCRIPTIONS);
+    if (!raw) {
+      const sample = generateSampleSubscriptions();
+      saveStoredSubscriptions(sample);
+      return sample;
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error('Failed to load subscriptions from localStorage:', err);
+    return generateSampleSubscriptions();
+  }
+};
+
+/**
+ * Save subscriptions to localStorage
+ */
+export const saveStoredSubscriptions = (subs: Subscription[]): void => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SUBSCRIPTIONS, JSON.stringify(subs));
+  } catch (err) {
+    console.error('Failed to save subscriptions to localStorage:', err);
+  }
+};
+
+/**
  * Clear all MoneyTrack data from localStorage
  */
 export const clearAllStorage = (): void => {
   try {
     localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
     localStorage.removeItem(STORAGE_KEYS.BUDGETS);
+    localStorage.removeItem(STORAGE_KEYS.SUBSCRIPTIONS);
     localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
   } catch (err) {
     console.error('Failed to clear localStorage:', err);
@@ -198,13 +283,19 @@ export const clearAllStorage = (): void => {
 /**
  * Reset to rich sample data
  */
-export const resetToSampleData = (): { transactions: Transaction[]; budgets: Record<string, number> } => {
+export const resetToSampleData = (): {
+  transactions: Transaction[];
+  budgets: Record<string, number>;
+  subscriptions: Subscription[];
+} => {
   const transactions = generateSampleTransactions();
   const budgets = getDefaultBudgets();
+  const subscriptions = generateSampleSubscriptions();
   saveStoredTransactions(transactions);
   saveStoredBudgets(budgets);
+  saveStoredSubscriptions(subscriptions);
   localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
-  return { transactions, budgets };
+  return { transactions, budgets, subscriptions };
 };
 
 /**
@@ -213,12 +304,14 @@ export const resetToSampleData = (): { transactions: Transaction[]; budgets: Rec
 export const exportDataAsJSON = (): string => {
   const transactions = loadStoredTransactions();
   const budgets = loadStoredBudgets();
+  const subscriptions = loadStoredSubscriptions();
   return JSON.stringify(
     {
-      version: '1.0',
+      version: '1.1',
       exportedAt: new Date().toISOString(),
       transactions,
       budgets,
+      subscriptions,
     },
     null,
     2
@@ -241,10 +334,15 @@ export const importDataFromJSON = (
     if (parsed.budgets && typeof parsed.budgets === 'object') {
       saveStoredBudgets(parsed.budgets);
     }
+    if (Array.isArray(parsed.subscriptions)) {
+      saveStoredSubscriptions(parsed.subscriptions);
+    }
 
     return {
       success: true,
-      message: `Successfully imported ${parsed.transactions.length} transactions!`,
+      message: `Successfully imported ${parsed.transactions.length} transactions and ${
+        parsed.subscriptions?.length || 0
+      } subscriptions!`,
       count: parsed.transactions.length,
     };
   } catch (err: any) {

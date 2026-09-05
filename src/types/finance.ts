@@ -34,6 +34,18 @@ export interface MonthlyBudget {
   amount: number;
 }
 
+export interface Subscription {
+  id: string;
+  name: string;
+  amount: number;
+  billingCycle: 'monthly' | 'yearly';
+  billingDay: number; // 1-31
+  category: TransactionCategory;
+  autoRenew: boolean;
+  notes?: string;
+  createdAt?: string;
+}
+
 export interface MonthlyMetrics {
   totalIncome: number;
   totalExpenses: number;
@@ -69,6 +81,6 @@ export interface MonthlyComparison {
   savingsPercentChange: number;
 }
 
-export type ViewTab = 'dashboard' | 'transactions' | 'analytics' | 'budget';
+export type ViewTab = 'dashboard' | 'transactions' | 'subscriptions' | 'analytics' | 'budget';
 
 export type SortOrder = 'newest' | 'oldest' | 'highest' | 'lowest';

@@ -1,5 +1,17 @@
 import React from 'react';
-import { Sun, Moon, Plus, Settings, Wallet, Menu, Cloud, CloudOff, Loader2 } from 'lucide-react';
+import {
+  Sun,
+  Moon,
+  Plus,
+  Settings,
+  Wallet,
+  Menu,
+  Cloud,
+  CloudOff,
+  Loader2,
+  Smartphone,
+  User as UserIcon,
+} from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useFinance } from '../../context/FinanceContext';
 import { MonthSelector } from '../dashboard/MonthSelector';
@@ -7,16 +19,20 @@ import { MonthSelector } from '../dashboard/MonthSelector';
 interface NavbarProps {
   onOpenAddModal: () => void;
   onOpenSettingsModal: () => void;
+  onOpenAuthModal: () => void;
+  onOpenPwaModal: () => void;
   onToggleSidebar?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenAddModal,
   onOpenSettingsModal,
+  onOpenAuthModal,
+  onOpenPwaModal,
   onToggleSidebar,
 }) => {
   const { theme, toggleTheme } = useTheme();
-  const { cloudStatus } = useFinance();
+  const { cloudStatus, user } = useFinance();
 
   return (
     <header className="sticky top-0 z-30 bg-white/75 dark:bg-slate-950/75 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60 transition-colors">
@@ -49,7 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <MonthSelector />
         </div>
 
-        {/* Right Controls: Cloud Status, Quick Add, Theme toggle, Settings */}
+        {/* Right Controls */}
         <div className="flex items-center gap-2">
           {/* Cloud Sync Status Indicator */}
           <button
@@ -65,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ? 'Cloud Connection Error (Click to check)'
                 : 'Local Only (Click to connect Cloud Database)'
             }
-            className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+            className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
               cloudStatus === 'connected'
                 ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/20'
                 : cloudStatus === 'syncing' || cloudStatus === 'connecting'
@@ -78,24 +94,49 @@ export const Navbar: React.FC<NavbarProps> = ({
             {cloudStatus === 'connected' ? (
               <>
                 <Cloud className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span className="hidden md:inline">Cloud Synced</span>
+                <span>Cloud Synced</span>
               </>
             ) : cloudStatus === 'syncing' || cloudStatus === 'connecting' ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600 dark:text-amber-400" />
-                <span className="hidden md:inline">Syncing</span>
+                <span>Syncing</span>
               </>
             ) : cloudStatus === 'error' ? (
               <>
                 <CloudOff className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                <span className="hidden md:inline">Cloud Error</span>
+                <span>Cloud Error</span>
               </>
             ) : (
               <>
                 <CloudOff className="w-3.5 h-3.5 text-slate-400" />
-                <span className="hidden md:inline">Local Only</span>
+                <span>Local Only</span>
               </>
             )}
+          </button>
+
+          {/* User Account / Auth Button */}
+          <button
+            onClick={onOpenAuthModal}
+            title={user ? `Signed in as ${user.email}` : 'Sign in / Create Account'}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              user
+                ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20'
+                : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+            }`}
+          >
+            <UserIcon className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline max-w-[100px] truncate">
+              {user ? user.email?.split('@')[0] : 'Sign In'}
+            </span>
+          </button>
+
+          {/* PWA Install Button */}
+          <button
+            onClick={onOpenPwaModal}
+            title="Install MoneyTrack on your phone or desktop"
+            className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-900 hover:bg-slate-200/70 dark:hover:bg-slate-800 rounded-xl transition-colors"
+          >
+            <Smartphone className="w-4 h-4" />
           </button>
 
           {/* Quick Add Button */}

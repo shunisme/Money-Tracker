@@ -4,6 +4,7 @@
 -- 1. Create transactions table
 CREATE TABLE IF NOT EXISTS public.transactions (
     id TEXT PRIMARY KEY,
+    user_id UUID DEFAULT auth.uid(),
     amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
     type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
     category TEXT NOT NULL,
@@ -15,44 +16,55 @@ CREATE TABLE IF NOT EXISTS public.transactions (
 -- 2. Create budgets table
 CREATE TABLE IF NOT EXISTS public.budgets (
     month TEXT PRIMARY KEY, -- format: 'YYYY-MM'
+    user_id UUID DEFAULT auth.uid(),
     amount NUMERIC(12, 2) NOT NULL CHECK (amount >= 0),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Create indexes for high-speed date and month filtering
-CREATE INDEX IF NOT EXISTS idx_transactions_date ON public.transactions(date DESC);
-CREATE INDEX IF NOT EXISTS idx_transactions_type ON public.transactions(type);
-CREATE INDEX IF NOT EXISTS idx_transactions_category ON public.transactions(category);
+-- 3. Create subscriptions table
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+    id TEXT PRIMARY KEY,
+    user_id UUID DEFAULT auth.uid(),
+    name TEXT NOT NULL,
+    amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
+    billing_cycle TEXT NOT NULL DEFAULT 'monthly',
+    billing_day INT NOT NULL CHECK (billing_day >= 1 AND billing_day <= 31),
+    category TEXT NOT NULL,
+    auto_renew BOOLEAN DEFAULT TRUE,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
--- 4. Enable Row Level Security (RLS)
+-- 4. Create indexes for high-speed queries
+CREATE INDEX IF NOT EXISTS idx_transactions_date ON public.transactions(date DESC);
+CREATE INDEX IF NOT EXISTS idx_transactions_user ON public.transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON public.subscriptions(user_id);
+
+-- 5. Enable Row Level Security (RLS)
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.budgets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 
--- 5. Create Permissive Access Policies (allows read/write with anon key)
-CREATE POLICY "Allow public read access on transactions"
-    ON public.transactions FOR SELECT
-    USING (true);
+-- 6. Access Policies: allows both authenticated multi-user isolation and guest access
+DROP POLICY IF EXISTS "Allow all transactions access" ON public.transactions;
+CREATE POLICY "Allow all transactions access"
+    ON public.transactions FOR ALL
+    USING (auth.uid() = user_id OR user_id IS NULL OR auth.uid() IS NULL)
+    WITH CHECK (auth.uid() = user_id OR user_id IS NULL OR auth.uid() IS NULL);
 
-CREATE POLICY "Allow public insert access on transactions"
-    ON public.transactions FOR INSERT
-    WITH CHECK (true);
-
-CREATE POLICY "Allow public update access on transactions"
-    ON public.transactions FOR UPDATE
-    USING (true);
-
-CREATE POLICY "Allow public delete access on transactions"
-    ON public.transactions FOR DELETE
-    USING (true);
-
-CREATE POLICY "Allow public read access on budgets"
-    ON public.budgets FOR SELECT
-    USING (true);
-
-CREATE POLICY "Allow public insert/update access on budgets"
+DROP POLICY IF EXISTS "Allow all budgets access" ON public.budgets;
+CREATE POLICY "Allow all budgets access"
     ON public.budgets FOR ALL
-    USING (true);
+    USING (auth.uid() = user_id OR user_id IS NULL OR auth.uid() IS NULL)
+    WITH CHECK (auth.uid() = user_id OR user_id IS NULL OR auth.uid() IS NULL);
 
--- 6. Enable Realtime Replication for instant multi-device sync
+DROP POLICY IF EXISTS "Allow all subscriptions access" ON public.subscriptions;
+CREATE POLICY "Allow all subscriptions access"
+    ON public.subscriptions FOR ALL
+    USING (auth.uid() = user_id OR user_id IS NULL OR auth.uid() IS NULL)
+    WITH CHECK (auth.uid() = user_id OR user_id IS NULL OR auth.uid() IS NULL);
+
+-- 7. Enable Realtime Replication for instant multi-device sync
 ALTER PUBLICATION supabase_realtime ADD TABLE public.transactions;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.budgets;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.subscriptions;

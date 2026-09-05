@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   ReceiptText,
   BarChart3,
+  CalendarClock,
   Settings,
   Wallet,
   PiggyBank,
@@ -27,7 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpenMobile = false,
   onCloseMobile,
 }) => {
-  const { metrics, activeMonth, activeMonthTransactions } = useFinance();
+  const { metrics, activeMonth, activeMonthTransactions, subscriptions } = useFinance();
 
   const navItems = [
     {
@@ -40,6 +41,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Transactions',
       icon: ReceiptText,
       badge: activeMonthTransactions.length,
+    },
+    {
+      id: 'subscriptions' as ViewTab,
+      label: 'Subscriptions',
+      icon: CalendarClock,
+      badge: subscriptions.length,
     },
     {
       id: 'analytics' as ViewTab,

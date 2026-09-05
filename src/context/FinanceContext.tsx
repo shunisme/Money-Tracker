@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import type { User } from '@supabase/supabase-js';
 import type {
   Transaction,
+  Subscription,
   MonthlyMetrics,
   CategorySummary,
   MonthlyComparison,
@@ -10,6 +12,8 @@ import {
   saveStoredTransactions,
   loadStoredBudgets,
   saveStoredBudgets,
+  loadStoredSubscriptions,
+  saveStoredSubscriptions,
   clearAllStorage,
   resetToSampleData,
   importDataFromJSON,
@@ -27,14 +31,19 @@ import {
   saveCloudConfig,
   clearCloudConfig,
   testCloudConnection,
+  getSupabaseClient,
+  getAuthUser,
   type CloudConfig,
 } from '../services/supabaseClient';
 import {
   fetchCloudTransactions,
   fetchCloudBudgets,
+  fetchCloudSubscriptions,
   pushTransactionToCloud,
   updateCloudTransaction,
   deleteCloudTransaction,
+  pushSubscriptionToCloud,
+  deleteCloudSubscription,
   saveCloudBudget,
   pushLocalDataToCloud,
   subscribeToCloudRealtime,
@@ -44,6 +53,8 @@ export type CloudStatus = 'connected' | 'connecting' | 'disconnected' | 'syncing
 
 interface FinanceContextType {
   transactions: Transaction[];
+  subscriptions: Subscription[];
+  user: User | null;
   activeMonth: string;
   budgets: Record<string, number>;
   activeBudget: number;
@@ -57,9 +68,12 @@ interface FinanceContextType {
   setActiveMonth: (month: string) => void;
   prevMonth: () => void;
   nextMonth: () => void;
-  addTransaction: (data: Omit<Transaction, 'id' | 'createdAt'>) => void;
+  addTransaction: (data: Omit<Transaction, 'id' | 'createdAt'>) => Transaction;
   updateTransaction: (id: string, data: Partial<Omit<Transaction, 'id' | 'createdAt'>>) => void;
   deleteTransaction: (id: string) => void;
+  addSubscription: (data: Omit<Subscription, 'id' | 'createdAt'>) => void;
+  updateSubscription: (id: string, data: Partial<Omit<Subscription, 'id' | 'createdAt'>>) => void;
+  deleteSubscription: (id: string) => void;
   setMonthlyBudget: (month: string, amount: number) => void;
   resetToDemoData: () => void;
   clearAllData: () => void;
@@ -75,6 +89,8 @@ const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [transactions, setTransactions] = useState<Transaction[]>(() => loadStoredTransactions());
   const [budgets, setBudgets] = useState<Record<string, number>>(() => loadStoredBudgets());
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>(() => loadStoredSubscriptions());
+  const [user, setUser] = useState<User | null>(null);
   const [activeMonth, setActiveMonth] = useState<string>(() => getCurrentMonth());
 
   const [cloudConfig, setCloudConfigState] = useState<CloudConfig>(() => getCloudConfig());
@@ -92,6 +108,34 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     saveStoredBudgets(budgets);
   }, [budgets]);
 
+  useEffect(() => {
+    saveStoredSubscriptions(subscriptions);
+  }, [subscriptions]);
+
+  // Check auth user and listen to auth state changes
+  useEffect(() => {
+    const client = getSupabaseClient();
+    if (!client) {
+      setUser(null);
+      return;
+    }
+
+    getAuthUser().then((u) => setUser(u));
+
+    const {
+      data: { subscription: authListener },
+    } = client.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        syncWithCloud();
+      }
+    });
+
+    return () => {
+      authListener?.unsubscribe();
+    };
+  }, [cloudConfig.isConfigured]);
+
   // Sync data with cloud
   const syncWithCloud = useCallback(async () => {
     const config = getCloudConfig();
@@ -104,23 +148,26 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setCloudError(null);
 
     try {
-      const [remoteTxs, remoteBudgets] = await Promise.all([
+      const [remoteTxs, remoteBudgets, remoteSubs] = await Promise.all([
         fetchCloudTransactions(),
         fetchCloudBudgets(),
+        fetchCloudSubscriptions(),
       ]);
 
       if (remoteTxs !== null) {
         if (remoteTxs.length > 0) {
-          // Merge or replace: if cloud has data, use cloud data
           setTransactions(remoteTxs);
         } else if (transactions.length > 0) {
-          // Cloud table is empty, push existing local transactions to cloud
           await pushLocalDataToCloud(transactions, budgets);
         }
       }
 
       if (remoteBudgets !== null && Object.keys(remoteBudgets).length > 0) {
         setBudgets(remoteBudgets);
+      }
+
+      if (remoteSubs !== null && remoteSubs.length > 0) {
+        setSubscriptions(remoteSubs);
       }
 
       setCloudStatus('connected');
@@ -156,18 +203,16 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const unsubscribe = subscribeToCloudRealtime(
       async () => {
-        // Transactions changed in cloud
         const remoteTxs = await fetchCloudTransactions();
-        if (remoteTxs) {
-          setTransactions(remoteTxs);
-        }
+        if (remoteTxs) setTransactions(remoteTxs);
       },
       async () => {
-        // Budgets changed in cloud
         const remoteBudgets = await fetchCloudBudgets();
-        if (remoteBudgets) {
-          setBudgets(remoteBudgets);
-        }
+        if (remoteBudgets) setBudgets(remoteBudgets);
+      },
+      async () => {
+        const remoteSubs = await fetchCloudSubscriptions();
+        if (remoteSubs) setSubscriptions(remoteSubs);
       }
     );
 
@@ -204,7 +249,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setActiveMonth((curr) => shiftMonth(curr, 1));
   };
 
-  const addTransaction = (data: Omit<Transaction, 'id' | 'createdAt'>) => {
+  const addTransaction = (data: Omit<Transaction, 'id' | 'createdAt'>): Transaction => {
     const newTx: Transaction = {
       ...data,
       id: `tx-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
@@ -225,15 +270,15 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (txMonth !== activeMonth) {
       setActiveMonth(txMonth);
     }
+
+    return newTx;
   };
 
   const updateTransaction = (id: string, data: Partial<Omit<Transaction, 'id' | 'createdAt'>>) => {
-    // 1. Instant local update
     setTransactions((prev) =>
       prev.map((tx) => (tx.id === id ? { ...tx, ...data } : tx))
     );
 
-    // 2. Async cloud update
     if (cloudStatus === 'connected') {
       updateCloudTransaction(id, data).catch((e) =>
         console.error('Background cloud update failed:', e)
@@ -242,13 +287,59 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteTransaction = (id: string) => {
-    // 1. Instant local update
     setTransactions((prev) => prev.filter((tx) => tx.id !== id));
 
-    // 2. Async cloud delete
     if (cloudStatus === 'connected') {
       deleteCloudTransaction(id).catch((e) =>
         console.error('Background cloud delete failed:', e)
+      );
+    }
+  };
+
+  const addSubscription = (data: Omit<Subscription, 'id' | 'createdAt'>) => {
+    const newSub: Subscription = {
+      ...data,
+      id: `sub-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    setSubscriptions((prev) => [...prev, newSub]);
+
+    if (cloudStatus === 'connected') {
+      pushSubscriptionToCloud(newSub).catch((e) =>
+        console.error('Background cloud subscription insert failed:', e)
+      );
+    }
+  };
+
+  const updateSubscription = (
+    id: string,
+    data: Partial<Omit<Subscription, 'id' | 'createdAt'>>
+  ) => {
+    let updatedSub: Subscription | null = null;
+    setSubscriptions((prev) =>
+      prev.map((sub) => {
+        if (sub.id === id) {
+          updatedSub = { ...sub, ...data };
+          return updatedSub;
+        }
+        return sub;
+      })
+    );
+
+    if (cloudStatus === 'connected' && updatedSub) {
+      pushSubscriptionToCloud(updatedSub).catch((e) =>
+        console.error('Background cloud subscription update failed:', e)
+      );
+    }
+  };
+
+  const deleteSubscription = (id: string) => {
+    setSubscriptions((prev) => prev.filter((sub) => sub.id !== id));
+
+    if (cloudStatus === 'connected') {
+      deleteCloudSubscription(id).catch((e) =>
+        console.error('Background cloud subscription delete failed:', e)
       );
     }
   };
@@ -280,7 +371,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return testRes;
     }
 
-    // Save and re-init
     saveCloudConfig(url, anonKey);
     setCloudConfigState(getCloudConfig());
     await syncWithCloud();
@@ -296,6 +386,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setCloudConfigState(getCloudConfig());
     setCloudStatus('disconnected');
     setCloudError(null);
+    setUser(null);
   };
 
   const pushAllToCloud = async (): Promise<{ success: boolean; message: string }> => {
@@ -311,9 +402,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const resetToDemoData = () => {
-    const { transactions: demoTxs, budgets: demoBudgets } = resetToSampleData();
+    const { transactions: demoTxs, budgets: demoBudgets, subscriptions: demoSubs } = resetToSampleData();
     setTransactions(demoTxs);
     setBudgets(demoBudgets);
+    setSubscriptions(demoSubs);
     setActiveMonth(getCurrentMonth());
 
     if (cloudStatus === 'connected') {
@@ -325,6 +417,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     clearAllStorage();
     setTransactions([]);
     setBudgets({});
+    setSubscriptions([]);
   };
 
   const importData = (jsonString: string) => {
@@ -332,8 +425,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (result.success) {
       const loadedTxs = loadStoredTransactions();
       const loadedBudgets = loadStoredBudgets();
+      const loadedSubs = loadStoredSubscriptions();
       setTransactions(loadedTxs);
       setBudgets(loadedBudgets);
+      setSubscriptions(loadedSubs);
 
       if (cloudStatus === 'connected') {
         pushLocalDataToCloud(loadedTxs, loadedBudgets);
@@ -346,6 +441,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <FinanceContext.Provider
       value={{
         transactions,
+        subscriptions,
+        user,
         activeMonth,
         budgets,
         activeBudget,
@@ -362,6 +459,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addTransaction,
         updateTransaction,
         deleteTransaction,
+        addSubscription,
+        updateSubscription,
+        deleteSubscription,
         setMonthlyBudget,
         resetToDemoData,
         clearAllData,
