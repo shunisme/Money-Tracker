@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e?style=flat-square&logo=supabase&logoColor=white" alt="Supabase" />
 </p>
 
-MoneyTrack is a personal finance and budget tracking application designed for clear, everyday financial management. It provides monthly cash flow monitoring, expense categorization, recurring subscription tracking, and budget thresholds. The platform operates on a local-first model with optional cloud synchronization.
+MoneyTrack is a personal finance and budget tracking application designed for daily financial management. It provides monthly cash flow monitoring, expense categorization, recurring subscription tracking, and budget thresholds. The platform operates on a local-first model with optional cloud synchronization.
 
 Live Application: [https://money-tracker-2cyr.vercel.app](https://money-tracker-2cyr.vercel.app)
 
@@ -32,7 +32,7 @@ MoneyTrack enables users to record transactions, plan monthly expenditure, and a
 The central dashboard displays essential metrics for the active month, including total income, total expenditure, net savings, and the overall savings rate. It also calculates a daily safe-to-spend runway, showing the remaining discretionary budget distributed across the remaining days of the billing cycle.
 
 ### Month-over-Month Comparisons
-A dedicated summary compares current income, expenses, and net savings against the preceding month, presenting variance in both absolute currency amounts and percentages.
+A summary compares current income, expenses, and net savings against the preceding month, presenting variance in both absolute currency amounts and percentages.
 
 ### One-Tap Transaction Logging
 The interface provides preset shortcuts for frequent routine expenses (such as dining, fuel, and groceries). An undo mechanism remains active for six seconds after entry to reverse accidental submissions.
