@@ -84,3 +84,13 @@ export interface MonthlyComparison {
 export type ViewTab = 'dashboard' | 'transactions' | 'subscriptions' | 'analytics' | 'budget';
 
 export type SortOrder = 'newest' | 'oldest' | 'highest' | 'lowest';
+
+export interface QuickPreset {
+  id: string;
+  name: string;
+  amount: number;
+  type: TransactionType;
+  category: TransactionCategory;
+  description?: string;
+  createdAt?: string;
+}

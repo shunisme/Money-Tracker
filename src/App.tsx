@@ -20,6 +20,7 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { InstallPwaModal } from './components/common/InstallPwaModal';
 import { ConfirmModal } from './components/common/ConfirmModal';
+import { formatCurrency } from './utils/formatters';
 
 const MainContent: React.FC = () => {
   const { addTransaction, updateTransaction, deleteTransaction, activeMonth } = useFinance();
@@ -176,6 +177,17 @@ const MainContent: React.FC = () => {
         message={`Are you sure you want to remove "${deletingTransaction?.description}"? This action cannot be undone.`}
         confirmLabel="Delete"
         isDestructive={true}
+        deletedMessage="Transaction Deleted"
+        itemDetails={
+          deletingTransaction
+            ? {
+                title: deletingTransaction.description,
+                badge: `${deletingTransaction.type === 'income' ? '+' : '-'}${formatCurrency(
+                  deletingTransaction.amount
+                )} • ${deletingTransaction.category}`,
+              }
+            : undefined
+        }
       />
     </div>
   );

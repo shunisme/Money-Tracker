@@ -67,52 +67,45 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Controls */}
         <div className="flex items-center gap-2">
-          {/* Cloud Sync Status Indicator */}
-          <button
-            onClick={onOpenSettingsModal}
-            title={
-              cloudStatus === 'connected'
-                ? 'Cloud Synced with Supabase (Click to manage)'
-                : cloudStatus === 'syncing'
-                ? 'Syncing with Supabase...'
-                : cloudStatus === 'connecting'
-                ? 'Connecting to Supabase...'
-                : cloudStatus === 'error'
-                ? 'Cloud Connection Error (Click to check)'
-                : 'Local Only (Click to connect Cloud Database)'
-            }
-            className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-              cloudStatus === 'connected'
-                ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/20'
-                : cloudStatus === 'syncing' || cloudStatus === 'connecting'
-                ? 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300 dark:border-amber-500/20'
-                : cloudStatus === 'error'
-                ? 'bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-300 dark:border-rose-500/20'
-                : 'bg-slate-100 text-slate-600 border-slate-200/80 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-800'
-            }`}
-          >
-            {cloudStatus === 'connected' ? (
-              <>
-                <Cloud className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Cloud Synced</span>
-              </>
-            ) : cloudStatus === 'syncing' || cloudStatus === 'connecting' ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600 dark:text-amber-400" />
-                <span>Syncing</span>
-              </>
-            ) : cloudStatus === 'error' ? (
-              <>
-                <CloudOff className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                <span>Cloud Error</span>
-              </>
-            ) : (
-              <>
-                <CloudOff className="w-3.5 h-3.5 text-slate-400" />
-                <span>Local Only</span>
-              </>
-            )}
-          </button>
+          {/* Cloud Sync Status Indicator (only shown if cloud is active/connected) */}
+          {cloudStatus !== 'disconnected' && (
+            <button
+              onClick={onOpenSettingsModal}
+              title={
+                cloudStatus === 'connected'
+                  ? 'Cloud Synced with Supabase (Click to manage)'
+                  : cloudStatus === 'syncing'
+                  ? 'Syncing with Supabase...'
+                  : cloudStatus === 'connecting'
+                  ? 'Connecting to Supabase...'
+                  : 'Cloud Connection Error (Click to check)'
+              }
+              className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                cloudStatus === 'connected'
+                  ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/20'
+                  : cloudStatus === 'syncing' || cloudStatus === 'connecting'
+                  ? 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300 dark:border-amber-500/20'
+                  : 'bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-300 dark:border-rose-500/20'
+              }`}
+            >
+              {cloudStatus === 'connected' ? (
+                <>
+                  <Cloud className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Cloud Synced</span>
+                </>
+              ) : cloudStatus === 'syncing' || cloudStatus === 'connecting' ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600 dark:text-amber-400" />
+                  <span>Syncing</span>
+                </>
+              ) : (
+                <>
+                  <CloudOff className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                  <span>Cloud Error</span>
+                </>
+              )}
+            </button>
+          )}
 
           {/* User Account / Auth Button */}
           <button

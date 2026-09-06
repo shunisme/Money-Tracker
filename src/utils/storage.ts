@@ -1,10 +1,11 @@
-import type { Transaction, Subscription } from '../types/finance';
+import type { Transaction, Subscription, QuickPreset } from '../types/finance';
 import { getCurrentMonth, shiftMonth } from './formatters';
 
 const STORAGE_KEYS = {
   TRANSACTIONS: 'moneytrack_transactions_v2',
   BUDGETS: 'moneytrack_budgets_v2',
   SUBSCRIPTIONS: 'moneytrack_subscriptions_v2',
+  PRESETS: 'moneytrack_presets_v1',
   THEME: 'moneytrack_theme_v1',
   INITIALIZED: 'moneytrack_has_initialized_v2',
 };
@@ -263,6 +264,30 @@ export const saveStoredSubscriptions = (subs: Subscription[]): void => {
 };
 
 /**
+ * Load quick presets from localStorage (defaults to empty array - 0 default content)
+ */
+export const loadStoredPresets = (): QuickPreset[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.PRESETS);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.error('Failed to load presets from localStorage:', err);
+    return [];
+  }
+};
+
+/**
+ * Save quick presets to localStorage
+ */
+export const saveStoredPresets = (presets: QuickPreset[]): void => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.PRESETS, JSON.stringify(presets));
+  } catch (err) {
+    console.error('Failed to save presets to localStorage:', err);
+  }
+};
+
+/**
  * Clear all MoneyTrack data from localStorage
  */
 export const clearAllStorage = (): void => {
@@ -270,6 +295,7 @@ export const clearAllStorage = (): void => {
     localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
     localStorage.removeItem(STORAGE_KEYS.BUDGETS);
     localStorage.removeItem(STORAGE_KEYS.SUBSCRIPTIONS);
+    localStorage.removeItem(STORAGE_KEYS.PRESETS);
     localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
   } catch (err) {
     console.error('Failed to clear localStorage:', err);
@@ -301,13 +327,15 @@ export const exportDataAsJSON = (): string => {
   const transactions = loadStoredTransactions();
   const budgets = loadStoredBudgets();
   const subscriptions = loadStoredSubscriptions();
+  const presets = loadStoredPresets();
   return JSON.stringify(
     {
-      version: '1.1',
+      version: '1.2',
       exportedAt: new Date().toISOString(),
       transactions,
       budgets,
       subscriptions,
+      presets,
     },
     null,
     2
@@ -333,12 +361,15 @@ export const importDataFromJSON = (
     if (Array.isArray(parsed.subscriptions)) {
       saveStoredSubscriptions(parsed.subscriptions);
     }
+    if (Array.isArray(parsed.presets)) {
+      saveStoredPresets(parsed.presets);
+    }
 
     return {
       success: true,
-      message: `Successfully imported ${parsed.transactions.length} transactions and ${
+      message: `Successfully imported ${parsed.transactions.length} transactions, ${
         parsed.subscriptions?.length || 0
-      } subscriptions!`,
+      } subscriptions, and ${parsed.presets?.length || 0} quick presets!`,
       count: parsed.transactions.length,
     };
   } catch (err: any) {

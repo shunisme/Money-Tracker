@@ -6,6 +6,7 @@ import type {
   MonthlyMetrics,
   CategorySummary,
   MonthlyComparison,
+  QuickPreset,
 } from '../types/finance';
 import {
   loadStoredTransactions,
@@ -14,6 +15,8 @@ import {
   saveStoredBudgets,
   loadStoredSubscriptions,
   saveStoredSubscriptions,
+  loadStoredPresets,
+  saveStoredPresets,
   clearAllStorage,
   resetToSampleData,
   importDataFromJSON,
@@ -54,6 +57,7 @@ export type CloudStatus = 'connected' | 'connecting' | 'disconnected' | 'syncing
 interface FinanceContextType {
   transactions: Transaction[];
   subscriptions: Subscription[];
+  quickPresets: QuickPreset[];
   user: User | null;
   activeMonth: string;
   budgets: Record<string, number>;
@@ -74,6 +78,9 @@ interface FinanceContextType {
   addSubscription: (data: Omit<Subscription, 'id' | 'createdAt'>) => void;
   updateSubscription: (id: string, data: Partial<Omit<Subscription, 'id' | 'createdAt'>>) => void;
   deleteSubscription: (id: string) => void;
+  addQuickPreset: (data: Omit<QuickPreset, 'id' | 'createdAt'>) => QuickPreset;
+  updateQuickPreset: (id: string, data: Partial<Omit<QuickPreset, 'id' | 'createdAt'>>) => void;
+  deleteQuickPreset: (id: string) => void;
   setMonthlyBudget: (month: string, amount: number) => void;
   resetToDemoData: () => void;
   clearAllData: () => void;
@@ -90,6 +97,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [transactions, setTransactions] = useState<Transaction[]>(() => loadStoredTransactions());
   const [budgets, setBudgets] = useState<Record<string, number>>(() => loadStoredBudgets());
   const [subscriptions, setSubscriptions] = useState<Subscription[]>(() => loadStoredSubscriptions());
+  const [quickPresets, setQuickPresets] = useState<QuickPreset[]>(() => loadStoredPresets());
   const [user, setUser] = useState<User | null>(null);
   const [activeMonth, setActiveMonth] = useState<string>(() => getCurrentMonth());
 
@@ -111,6 +119,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     saveStoredSubscriptions(subscriptions);
   }, [subscriptions]);
+
+  useEffect(() => {
+    saveStoredPresets(quickPresets);
+  }, [quickPresets]);
 
   // Check auth user and listen to auth state changes
   useEffect(() => {
@@ -344,6 +356,29 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const addQuickPreset = (data: Omit<QuickPreset, 'id' | 'createdAt'>): QuickPreset => {
+    const newPreset: QuickPreset = {
+      ...data,
+      id: `preset-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+      createdAt: new Date().toISOString(),
+    };
+    setQuickPresets((prev) => [...prev, newPreset]);
+    return newPreset;
+  };
+
+  const updateQuickPreset = (
+    id: string,
+    data: Partial<Omit<QuickPreset, 'id' | 'createdAt'>>
+  ) => {
+    setQuickPresets((prev) =>
+      prev.map((preset) => (preset.id === id ? { ...preset, ...data } : preset))
+    );
+  };
+
+  const deleteQuickPreset = (id: string) => {
+    setQuickPresets((prev) => prev.filter((preset) => preset.id !== id));
+  };
+
   const setMonthlyBudget = (month: string, amount: number) => {
     setBudgets((prev) => ({
       ...prev,
@@ -418,6 +453,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTransactions([]);
     setBudgets({});
     setSubscriptions([]);
+    setQuickPresets([]);
   };
 
   const importData = (jsonString: string) => {
@@ -426,9 +462,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const loadedTxs = loadStoredTransactions();
       const loadedBudgets = loadStoredBudgets();
       const loadedSubs = loadStoredSubscriptions();
+      const loadedPresets = loadStoredPresets();
       setTransactions(loadedTxs);
       setBudgets(loadedBudgets);
       setSubscriptions(loadedSubs);
+      setQuickPresets(loadedPresets);
 
       if (cloudStatus === 'connected') {
         pushLocalDataToCloud(loadedTxs, loadedBudgets);
@@ -442,6 +480,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       value={{
         transactions,
         subscriptions,
+        quickPresets,
         user,
         activeMonth,
         budgets,
@@ -462,6 +501,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addSubscription,
         updateSubscription,
         deleteSubscription,
+        addQuickPreset,
+        updateQuickPreset,
+        deleteQuickPreset,
         setMonthlyBudget,
         resetToDemoData,
         clearAllData,

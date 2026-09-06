@@ -93,3 +93,44 @@
   animation: checkmark-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
+/* Animated Delete Crossmark Animations */
+@keyframes crossmark-line {
+  0% {
+    stroke-dashoffset: 32;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+.animate-crossmark-line1 {
+  stroke-dasharray: 32;
+  stroke-dashoffset: 32;
+  animation: crossmark-line 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.22s forwards;
+}
+
+.animate-crossmark-line2 {
+  stroke-dasharray: 32;
+  stroke-dashoffset: 32;
+  animation: crossmark-line 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.34s forwards;
+}
+
+@keyframes delete-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.animate-delete-pop {
+  animation: checkmark-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+
